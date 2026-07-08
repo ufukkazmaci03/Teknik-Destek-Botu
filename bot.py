@@ -214,6 +214,9 @@ async def yardim_komutu(interaction: discord.Interaction):
 @bot.tree.command(name="talepler", description="[Yönetici] Sistemde bekleyen aktif tüm açık destek biletlerini listeler.")
 async def talepleri_listele(interaction: discord.Interaction):
     """Yöneticilerin veri tabanındaki açık biletleri görmesini sağlar."""
+    # 1. ADIM: Discord'a hemen yanıt sürecini ertelemesini söylüyoruz (Zaman aşımını önler)
+    await interaction.response.defer(ephemeral=True)
+
     conn = sqlite3.connect('magaza_destek.db')
     c = conn.cursor()
     c.execute("SELECT id, kullanici_adi, departman, mesaj, tarih FROM talepler WHERE durum='Açık'")
@@ -221,7 +224,8 @@ async def talepleri_listele(interaction: discord.Interaction):
     conn.close()
 
     if not veriler:
-        await interaction.response.send_message("🎉 Şu anda sistemde çözüm bekleyen açık bir talep bulunmuyor!", ephemeral=True)
+        # Önceden 'send_message' kullanıyorduk, defer kullandığımız için artık 'followup.send' kullanmalıyız
+        await interaction.followup.send("🎉 Şu anda sistemde çözüm bekleyen açık bir talep bulunmuyor!", ephemeral=True)
         return
 
     embed = discord.Embed(
@@ -238,27 +242,68 @@ async def talepleri_listele(interaction: discord.Interaction):
             inline=False
         )
 
-    await interaction.response.send_message(embed=embed, ephemeral=True)
+    # Burayı da 'followup.send' olarak güncelliyoruz
+    await interaction.followup.send(embed=embed, ephemeral=True)
 
 
-@bot.tree.command(name="talep_kapat", description="[Yönetici] Çözülen bir talebin durumunu 'Kapalı' yapar.")
+@bot.tree.command(name="talep_kapat", description="[Yönetici] Çözülen bir talebi kapatır ve müşteriye otomatik DM gönderir.")
 @app_commands.describe(bilet_id="Kapatılacak olan biletin benzersiz ID numarası")
 async def talebi_kapat(interaction: discord.Interaction, bilet_id: int):
-    """Veri tabanında arama yaparak belirtilen bileti kapatıldı durumuna getirir."""
+    """Veri tabanından bilet sahibini bulur, talebi kapatır ve müşteriye DM atar."""
+    # Discord zaman aşımını (3 saniye kuralını) engellemek için işlemi erteliyoruz
+    await interaction.response.defer(ephemeral=True)
+
     conn = sqlite3.connect('magaza_destek.db')
     c = conn.cursor()
-    c.execute("SELECT id FROM talepler WHERE id=?", (bilet_id,))
     
-    if not c.fetchone():
-        await interaction.response.send_message(f"❌ #{bilet_id} numaralı bir talep veri tabanında bulunamadı.", ephemeral=True)
+    # 1. ADIM: Veri tabanından biletin sahibinin Discord ID'sini çekiyoruz
+    c.execute("SELECT kullanici_id FROM talepler WHERE id=?", (bilet_id,))
+    sonuc = c.fetchone()
+    
+    if not sonuc:
+        await interaction.followup.send(f"❌ #{bilet_id} numaralı bir talep veri tabanında bulunamadı.", ephemeral=True)
         conn.close()
         return
 
+    kullanici_id = sonuc[0]
+
+    # 2. ADIM: Talebin durumunu veri tabanında 'Kapalı' olarak güncelliyoruz
     c.execute("UPDATE talepler SET durum='Kapalı' WHERE id=?", (bilet_id,))
     conn.commit()
     conn.close()
 
-    await interaction.response.send_message(f"✅ #{bilet_id} numaralı talep başarıyla çözüldü ve arşive kaldırıldı.", ephemeral=True)
+    # 3. ADIM: Müşterinin özel mesaj kutusuna (DM) bildirim gönderiyoruz
+    dm_notu = "ve müşteriye bilgilendirme mesajı başarıyla iletildi."
+    
+    try:
+        # Discord API'sinden kullanıcı nesnesini ID ile çağırıyoruz
+        kullanici = await bot.fetch_user(int(kullanici_id))
+        
+        # Müşterinin göreceği çok şık bir Embed (Görsel Kart) hazırlıyoruz
+        onay_embed = discord.Embed(
+            title="👟 Alabileceğin Her Şey - Sipariş Güncellemesi",
+            description=f"Merhaba, mağazamıza iletmiş olduğunuz **#{bilet_id}** numaralı destek talebiniz tamamlanmıştır.",
+            color=discord.Color.blue()
+        )
+        # İstediğin mesajı tam buraya ekledik:
+        onay_embed.add_field(
+            name="🛠️ İşlem Detayı", 
+            value="**Talebiniz gerçekleştirildi ve ayakkabınız onarıldı.** ✨", 
+            inline=False
+        )
+        onay_embed.set_footer(text="Markamızı tercih ettiğiniz için teşekkür ederiz! İyi günler dileriz.")
+        
+        # Mesajı müşterinin DM kutusuna gönderiyoruz
+        await kullanici.send(embed=onay_embed)
+
+    except discord.Forbidden:
+        # Eğer müşterinin DM kutusu yabancılara kapalıysa botun çökmesini engelliyoruz
+        dm_notu = "ancak müşterinin gizlilik ayarları nedeniyle DM kutusu kapalı olduğundan mesaj iletilemedi."
+    except Exception as e:
+        dm_notu = f"ancak DM gönderilirken bir sorun oluştu: {e}"
+
+    # 4. ADIM: Yöneticiye işlemin bittiğine dair rapor veriyoruz
+    await interaction.followup.send(f"✅ #{bilet_id} numaralı talep başarıyla kapatıldı {dm_notu}", ephemeral=True)
 
 
 # ==========================================
@@ -283,4 +328,4 @@ async def on_ready():
 BOT_TOKEN = "BURAYA_DISCORD_BOT_TOKENINIZI_YAZIN"
 
 if __name__ == "__main__":
-    bot.run(BOT_TOKEN)
+    bot.run(TOKEN)
