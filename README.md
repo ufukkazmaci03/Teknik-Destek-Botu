@@ -1,81 +1,49 @@
-readme_content = """# 👟 Alabileceğin Her Şey - Discord Teknik Destek Botu
+# 👟 Alabileceğin Her Şey - Discord Teknik Destek Botu 🚀
 
-Bu proje, "Alabileceğin Her Şey" çevrimiçi ayakkabı mağazası için geliştirilmiş, Python tabanlı bir Discord teknik destek botudur. Müşterilerin sıkça sorduğu soruları yanıtlamak, mağaza içi sorunları çözmek ve gerektiğinde talepleri ilgili uzman departmanlara (Programcılar ve Satış Departmanı) yönlendirmek amacıyla tasarlanmıştır.
+Bu proje, "Alabileceğin Her Şey" adlı çevrimiçi ayakkabı mağazası için geliştirilmiş, Python tabanlı akıllı bir Discord teknik destek botudur. Müşteri memnuniyetini en üst düzeye çıkarmak için SSS (Sıkça Sorulan Sorular) otomasyonu ve uzman departmanlara (Programcılar & Satış) yönlendirme sağlayan bilet (ticket) sistemi içerir.
 
-Bu çalışma, Python dilinin güncel nesne yönelimli ve asenkron programlama teknikleri kullanılarak hazırlanmış bir mezuniyet projesidir.
+Bu çalışma, Python dilinin 3. seviye (Level 3) asenkron programlama, API entegrasyonu ve yerel veri tabanı yönetimi konularını kapsayan bir mezuniyet projesidir.
 
-## 🚀 Özellikler
+---
 
-1. **Otomatik SSS (Sıkça Sorulan Sorular) Menüsü:** Kullanıcılar, modern ve şık bir açılır menü (Select Menu) aracılığıyla mağaza politikaları, sipariş durumları ve iptal/iade süreçleri hakkında anında bilgi alabilirler.
-2. **Canlı Destek Formu (Modal Entegrasyonu):** SSS menüsünde aradığı cevabı bulamayan müşteriler, doğrudan Discord arayüzü üzerinden açılan bir form penceresi ile sorunlarını detaylıca iletebilirler.
-3. **Akıllı Metin İşleme (Text Processing):** Bot, sohbet kanallarına yazılan "hasarlı", "iptal", "kargom nerede" gibi anahtar kelimeleri otomatik olarak algılar ve kullanıcıyı ilgili çözüme yönlendirir.
-4. **Kalıcı Veri Tabanı (SQLite3):** Uzmanlara iletilen tüm destek talepleri, kullanıcı bilgileri, departman türü, mesaj ve tarih damgasıyla birlikte güvenli bir yerel veri tabanında saklanır.
-5. **Yönetici Kontrol Paneli:** Mağaza yöneticileri `/biletler` ve `/bilet_kapat` gibi gelişmiş eğik çizgi (Slash) komutlarını kullanarak gelen talepleri canlı olarak yönetebilir.
+## 🧠 Proje Geliştirme Değerlendirmesi (Geliştirici Notları)
 
-## 🛠️ Gereksinimler
+Proje tasarım ve kodlama sürecindeki durum analizi aşağıda belirtilmiştir:
 
-Projenin çalıştırılabilmesi için bilgisayarınızda **Python 3.8 veya üzeri** bir sürümün yüklü olması gerekmektedir. 
+### ♻️ Eski projelerden kopyalayabileceğiniz kod parçaları var mı?
+**Evet, var.** Botun çalışmasını sağlayan ana iskelet yapısı önceki eğitim seviyelerinden (Python Basic ve Pro) aktarılmıştır:
+* Kütüphane içe aktarımları (`import discord`).
+* Botun sunucuya bağlanmasını sağlayan `on_ready` fonksiyonu ve `bot.run(TOKEN)` blokları.
+* Temel `@bot.tree.command` (Slash komutu) yapısının başlangıç iskeleti.
+* Intents (yetki) tanımlamalarının standart bölümleri.
 
-Gerekli harici kütüphane:
-* `discord.py` (v2.x)
+### 🏗️ Sıfırdan yazmanız gereken bölümler neler?
+Projeyi özgün kılan ve mağazanın ihtiyaçlarına göre **tamamen sıfırdan** kodlanan alanlar şunlardır:
+* **UI (Arayüz) Bileşenleri:** Müşteri SSS açılır menüsü (`discord.ui.Select`) ve uzmanlara bilet gönderme formları (`discord.ui.Modal`).
+* **Veri Tabanı Şeması:** Talepleri kalıcı olarak saklayan yerel `sqlite3` entegrasyonu ve SQL tablolarının (CRUD) oluşturulması.
+* **Akıllı Metin Analizi:** Müşterilerin sohbet kanalına yazdığı "hasarlı", "iptal", "kargo nerede" gibi cümleleri tarayıp mağaza politikasına göre anında yanıt veren algoritma.
+* **DM (Özel Mesaj) Bildirim Sistemi:** Bilet kapatıldığında müşteriye arka planda özel mesaj gönderen log sistemi.
 
-## 📦 Kurulum ve Çalıştırma
+### 🤝 Hangi konularda kesinlikle yardıma ihtiyaç duyacaksınız, hangilerini kendi başınıza halledebilirsiniz?
+* **Kendi Başıma Halledilebilecekler:** Temel Discord komutlarının oluşturulması, SSS listesindeki soruların kod içine sözlük (dictionary) olarak gömülmesi, veri tabanı okuma/yazma işlemleri ve botun arayüz tasarımları.
+* **Yardıma İhtiyaç Duyulan Konular (Zorluklar):** * Asenkron işlemler sırasında API'nin 3 saniye zaman aşımı kuralını aşmak (örn. `interaction.response.defer()` kullanımı).
+  * Kullanıcıların DM (Özel Mesaj) kutusu kapalı olduğunda botun çökmesini engelleyen hata yakalama blokları (`try-except discord.Forbidden`).
+  * Karmaşık Discord izinleri ve sunucu (Guild) dışı kullanıcı ID eşleştirmeleri.
 
-1.  **Bağımlılıkları Yükleyin:**
-    Komut satırından (CMD / Terminal) aşağıdaki komutu çalıştırarak gerekli kütüphaneyi yükleyin:
-    ```
-```text?code_stdout&code_event_index=2
-README.md başarıyla oluşturuldu.
+---
 
+## 🌟 Temel Özellikler
+
+1. **🤖 Otomatik Yanıt Sistemi:** Önceden tanımlanmış Google Dokümanı SSS verilerini kullanarak kullanıcılara açılır menü üzerinden hızlı çözümler sunar.
+2. **📩 Gelişmiş Bilet (Ticket) Sistemi:** Formlar aracılığıyla toplanan sorunları SQLite veri tabanına işler.
+3. **💬 Kelime Avcısı (Text Processing):** Sohbet kanalındaki normal yazışmaları analiz edip hasar veya iptal taleplerine resmi mağaza yanıtını döner.
+4. **🔔 Otomatik Müşteri Bilgilendirme:** Yöneticiler bir bileti çözüp kapattığında (`/talep_kapat`), bot bilet sahibine DM atarak "Talebiniz gerçekleştirildi ve ayakkabınız onarıldı. ✨" mesajını şık bir görsel kartla iletir.
+
+---
+
+## 🛠️ Kurulum ve Çalıştırma
+
+**1. Gerekli Kütüphaneler:**
+Bilgisayarınızda Python 3.8+ yüklü olmalıdır. Terminalden Discord kütüphanesini indirin:
 ```bash
-    pip install discord.py
-    ```
-
-2.  **Discord Geliştirici Portalı Ayarları:**
-    * [Discord Developer Portal](https://discord.com/developers/applications) adresine gidin.
-    * Bot uygulamanızı seçip sol menüdeki **Bot** sekmesine tıklayın.
-    * **Privileged Gateway Intents** başlığı altındaki şu üç seçeneği de aktif hale getirin:
-        * *Presence Intent*
-        * *Server Members Intent*
-        * *Message Content Intent* (Metin işleme ve kelime yakalama için zorunludur)
-
-3.  **Token Yapılandırması:**
-    * `bot.py` dosyasını bir kod editöründe açın.
-    * Dosyanın en altında yer alan `BOT_TOKEN = "BURAYA_DISCORD_BOT_TOKENINIZI_YAZIN"` satırındaki tırnak işaretlerinin arasına kendi bot tokenınızı yapıştırın.
-
-4.  **Projeyi Başlatın:**
-    Terminal üzerinden projeyi çalıştırın:
-    ```bash
-    python bot.py
-    ```
-
-## 🎯 Kullanım Kılavuzu
-
-### Müşteriler İçin:
-* **`/yardim`**: Teknik destek merkezini, SSS açılır menüsünü ve departman butonlarını içeren ana paneli ekrana getirir.
-* **Doğrudan Mesajlaşma**: Sohbet kanallarına "Siparişim hasarlı geldi" gibi cümleler veya anahtar kelimeler yazıldığında bot otomatik olarak devreye girer.
-
-### Mağaza Yöneticileri İçin:
-* **`/biletler`**: Şu anda sistemde bekleyen ve henüz çözülmemiş olan tüm açık destek biletlerini listeler.
-* **`/bilet_kapat [bilet_id]`**: Sorunu çözülen biletin durumunu veri tabanında "Kapalı" olarak günceller (Örn: `/bilet_kapat bilet_id: 1`).
-
-## 🗄️ Veri Tabanı Şeması (`magaza_destek.db`)
-
-Sistem ilk kez çalıştırıldığında otomatik olarak `biletler` adında bir tablo oluşturur. Tablo yapısı şu şekildedir:
-
-| Kolon Adı | Veri Tipi | Açıklama |
-| :--- | :--- | :--- |
-| `id` | INTEGER (PK) | Her bilet için otomatik artan benzersiz numara |
-| `kullanici_id` | TEXT | Bileti açan üyenin Discord ID'si |
-| `kullanici_adi` | TEXT | Bileti açan üyenin Discord kullanıcı adı |
-| `departman` | TEXT | Talebin iletildiği birim (Programcılar / Satış) |
-| `sorun_mesaji` | TEXT | Kullanıcının formda belirttiği detaylı şikayet |
-| `durum` | TEXT | Biletin güncel durumu (Varsayılan: 'Açık') |
-| `tarih` | TEXT | Talebin oluşturulduğu tam zaman damgası |
-
-## 📁 Proje Yapısı
-
-```text
-├── bot.py               # Ana uygulama ve bot kaynak kodu
-├── magaza_destek.db     # Otomatik oluşturulan SQLite veri tabanı dosyası
-└── README.md            # Proje açıklama ve kullanım dokümanı
+pip install discord.py
